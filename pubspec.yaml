@@ -31,6 +31,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  epub_view: any
+  file_picker: ^3.0.0
 
 
   # The following adds the Cupertino Icons font to your application.
