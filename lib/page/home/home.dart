@@ -22,6 +22,7 @@ class HomePage extends StatelessWidget {
                   const Expanded(child: SearchBox()),
                   IconButton(
                     icon: const Icon(Icons.add),
+                    splashRadius: 20.0,
                     onPressed: () {
                       // TODO: 添加本地 epub 书籍的逻辑
                     },

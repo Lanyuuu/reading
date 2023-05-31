@@ -119,7 +119,7 @@ packages:
     source: sdk
     version: "0.0.0"
   flutter_html:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: flutter_html
       url: "https://pub.flutter-io.cn"
