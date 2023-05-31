@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'components/seach.dart';
+import 'components/infinite_list.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -18,9 +19,7 @@ class HomePage extends StatelessWidget {
                 child: SearchBox(),
               ),
             )),
-        body: const Center(
-          child: Text('Hello, World!'),
-        ),
+        body: InfiniteListPage(),
       ),
     );
   }
