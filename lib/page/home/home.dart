@@ -11,15 +11,26 @@ class HomePage extends StatelessWidget {
       title: 'Hello, World!',
       home: Scaffold(
         appBar: AppBar(
-            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-            bottom: const PreferredSize(
-              preferredSize: Size.fromHeight(15.0),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-                child: SearchBox(),
+          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(14.0),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0, vertical: 10.0),
+              child: Row(
+                children: [
+                  const Expanded(child: SearchBox()),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () {
+                      // TODO: 添加本地 epub 书籍的逻辑
+                    },
+                  ),
+                ],
               ),
-            )),
-        body: InfiniteListPage(),
+            ),
+          )),
+        body: const InfiniteListPage(),
       ),
     );
   }
