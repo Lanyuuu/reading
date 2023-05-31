@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'page/home/home.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,12 +10,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Epub Reader',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+      title: 'Hello, World!',
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Hello, World!'),
+        ),
+        body: const Center(
+          child: Text('Hello, World!'),
+        ),
       ),
-      home: const HomePage(),
     );
   }
 }

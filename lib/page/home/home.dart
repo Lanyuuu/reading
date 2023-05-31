@@ -6,12 +6,21 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My App'),
-      ),
-      body: const Center(
-        child: SearchBox(),
+    return MaterialApp(
+      title: 'Hello, World!',
+      home: Scaffold(
+        appBar: AppBar(
+            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+            bottom: const PreferredSize(
+              preferredSize: Size.fromHeight(15.0),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                child: SearchBox(),
+              ),
+            )),
+        body: const Center(
+          child: Text('Hello, World!'),
+        ),
       ),
     );
   }
