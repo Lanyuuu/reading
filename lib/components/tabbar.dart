@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import '/utile/font_icons.dart';
 
 class TableBar extends StatefulWidget {
-  const TableBar({Key? key}) : super(key: key);
-
+  // ignore: prefer_typing_uninitialized_variables
+  final callBack;
+  const TableBar(this.callBack, {Key? key}) : super(key: key);
   @override
   TableBarState createState() => TableBarState();
 }
@@ -25,6 +26,7 @@ class TableBarState extends State<TableBar> {
         setState(() {
           _selectedIndex = index;
         });
+        widget.callBack(index);
       },
     );
   }

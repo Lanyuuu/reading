@@ -88,7 +88,7 @@ flutter:
   fonts:
     - family: IconFonts
       fonts:
-        - asset: /assets/fonts/iconfont.ttf
+        - asset: assets/fonts/iconfont.ttf
   #   - family: Trajan Pro
   #     fonts:
   #       - asset: fonts/TrajanPro.ttf
