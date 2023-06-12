@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '/network/http_request.dart';
 import '/model/movie_model.dart';
+import 'childComp/movie_item.dart';
 
 class Recommend extends StatelessWidget {
   const Recommend({Key? key}) : super(key: key);
@@ -42,13 +43,10 @@ class RecommendBodeState extends State<RecommendBode> {
   @override
   Widget build(BuildContext context) {
     return Center(
-        child: ListView.builder(
-            itemCount: movies.length,
-            itemBuilder: (context, index) => ListTile(
-                  title: Text(movies[index].title),
-                  subtitle: Text("上映时间: ${movies[index].playDate}"),
-                  leading: Image.network(movies[index].imageURL),
-                  trailing: Text(movies[index].rating),
-                )));
+      child: ListView.builder(
+        itemCount: movies.length,
+        itemBuilder: (context, index) => MovieListItem(movies[index]),
+      )
+    );
   }
 }
