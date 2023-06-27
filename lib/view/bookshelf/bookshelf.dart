@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:epub_view/epub_view.dart';
+// import 'package:epub_view/epub_view.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:vocsy_epub_viewer/epub_viewer.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:epubx/epubx.dart';
+import 'package:archive/archive.dart';
+import 'package:xml/xml.dart';
 
 class Book {
   final String title;
@@ -42,6 +44,51 @@ class _BookshelfState extends State<Bookshelf> {
 
         final bookFile = File('${directory.path}/${file.path.split('/').last}');
         bookFile.writeAsBytesSync(bytes);
+        List<int> abytes = await bookFile.readAsBytes();
+        Archive archive = ZipDecoder().decodeBytes(bytes);
+        print(archive);
+        for (ArchiveFile file in archive) {
+          final filename = file.name;
+          final data = file.content as List<int>;
+          print('${directory.path}$filename');
+          final filePath = '${directory.path}/${file.name}';
+          if (file.isFile) {
+            final data = file.content as List<int>;
+            File(filePath).writeAsBytesSync(data, flush: true);
+          } else {
+            Directory(filePath).createSync(recursive: true);
+          }
+        }
+
+        final opfFile = File('${directory.path}/metadata.opf');
+        final contents = opfFile.readAsStringSync();
+
+        // 解析 OPF 文件
+        final document = XmlDocument.parse(contents);
+        final package = document.getElement('package');
+        
+        // 提取元数据信息
+        final metadata = package?.getElement('metadata');
+        final title = metadata?.getElement('dc:title')?.text;
+        final author = metadata?.getElement('dc:creator')?.text;
+        final cover = metadata?.getElement('meta[@name="cover"]')?.getAttribute('content');
+        
+        // 提取目录信息
+        final manifest = package?.getElement('manifest');
+        final spine = package?.getElement('spine');
+        final toc = spine?.getElement('itemref[@idref="toc"]')?.getAttribute('idref');
+        
+        final items = manifest?.findAllElements('item');
+        final acontents = spine?.findAllElements('itemref')
+                            .map((itemref) => itemref.getAttribute('idref'))
+                            .map((idref) => items?.firstWhere((item) => item.getAttribute('id') == idref))
+                            .toList();
+
+        print('Title: $title');
+        print('Author: $author');
+        print('Cover: $cover');
+        print('TOC: $toc');
+        print('Contents: $acontents');
 
         setState(() {
           _books.add(Book(
@@ -54,21 +101,6 @@ class _BookshelfState extends State<Bookshelf> {
         print(e);
       }
     }
-  }
-
-  Future<void> _openBook(Book book) async {
-    EpubController controller = EpubController(
-      document: EpubReader.readBook(File(book.filePath).readAsBytesSync()),
-    );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EpubView(
-          controller: controller,
-        ),
-      ),
-    );
   }
 
   @override
@@ -87,29 +119,6 @@ class _BookshelfState extends State<Bookshelf> {
               // _localfilePath();
               // // _getEpubInfo();
               // _openBook(_books[index]);
-              VocsyEpub.setConfig(
-                themeColor: Theme.of(context).primaryColor,
-                identifier: "iosBook",
-                scrollDirection: EpubScrollDirection.ALLDIRECTIONS,
-                allowSharing: true,
-                enableTts: true,
-                nightMode: false,
-              );
-
-              // get current locator
-              VocsyEpub.locatorStream.listen((locator) {
-                print('LOCATOR: $locator');
-              });
-
-              VocsyEpub.open(
-                _books[index].filePath,
-                lastLocation: EpubLocator.fromJson({
-                  "bookId": "2239",
-                  "href": "/OEBPS/ch06.xhtml",
-                  "created": 1539934158390,
-                  "locations": {"cfi": "epubcfi(/0!/4/4[simple_book]/2/2/6)"}
-                }),
-              );
             },
           );
         },
