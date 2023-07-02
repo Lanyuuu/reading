@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' as parser;
 import 'package:html/dom.dart' as dom;
+import 'package:flutter_tts/flutter_tts.dart';
 
 class Profile extends StatelessWidget {
   const Profile({Key? key}) : super(key: key);
@@ -27,31 +28,30 @@ class Profile extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
         child: SingleChildScrollView(
-        child: Column(
-          children: document.body!.nodes.map((node) {
-            node.text = node.text?.replaceAll('\n', '');
-            if (node is dom.Element) {
-              switch (node.localName) {
-                case 'p':
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: MyWidget(text: node.text),
-                  );
-                default:
-                  return Text(
-                    node.text,
-                    style: const TextStyle(
-                      fontSize: 18,
-                    ),
-                  );
+          child: Column(
+            children: document.body!.nodes.map((node) {
+              node.text = node.text?.replaceAll('\n', '');
+              if (node is dom.Element) {
+                switch (node.localName) {
+                  case 'p':
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: MyWidget(text: node.text),
+                    );
+                  default:
+                    return Text(
+                      node.text,
+                      style: const TextStyle(
+                        fontSize: 18,
+                      ),
+                    );
+                }
               }
-            }
-            return SizedBox.shrink();
-          }).toList(),
+              return SizedBox.shrink();
+            }).toList(),
+          ),
         ),
       ),
-      ),
-
     );
   }
 
@@ -88,7 +88,6 @@ them.”</p>
   }
 }
 
-
 class MyWidget extends StatefulWidget {
   final String text;
 
@@ -99,60 +98,80 @@ class MyWidget extends StatefulWidget {
 }
 
 class _MyWidgetState extends State<MyWidget> {
-  List<Color> _backgroundColorList = [];
-  List<String?> _words = [];
+  final TextEditingController _textEditingController = TextEditingController();
+  late FlutterTts flutterTts;
+  String? _newVoiceText;
 
   @override
   void initState() {
     super.initState();
-    _words = widget.text.split(" ");
-    _backgroundColorList = List.filled(_words.length, Colors.transparent);
   }
 
   @override
   Widget build(BuildContext context) {
+    flutterTts = FlutterTts();
+    setTtsLanguage();
+    _textEditingController.text = "      ${widget.text}";
     // 如果words数组的每个元素有开头和结尾有非英文字符, 则需要再次分割
-    return Wrap(
-      runSpacing: 10,
-      children: List.generate(_words.length, (index) {
-        // print(words[index]);
-        return Tooltip(
-          message: _words[index],
-          preferBelow: false,
-          child: Text(
-            '${_words[index]} ',
-            style: const TextStyle(
-              fontSize: 18,
-            ),
-          )
-        );
-      }),
+    return SelectableText(
+      _textEditingController.text,
+      onTap: () {
+        setState(() {
+          // _backgroundColorList[index] = Colors.yellow;
+        });
+      },
+      style: const TextStyle(
+        fontSize: 18,
+        // 上下行距
+        height: 1.5,
+      ),
+      toolbarOptions: const ToolbarOptions(
+        copy: false,
+        selectAll: false,
+        cut: false,
+        paste: false,
+      ),
+      onSelectionChanged: (selection, cause) {
+        if (cause == SelectionChangedCause.longPress) {
+          print(selection.baseOffset);
+          print(selection.extentOffset);
+          print(selection.textInside(_textEditingController.text));
+          print(selection.textAfter(_textEditingController.text));
+          print(selection.textBefore(_textEditingController.text));
+        }else if (cause == SelectionChangedCause.tap) {
+          print(selection);
+          print(selection.baseOffset);
+          print(selection.extentOffset);
+          print(selection.textInside(_textEditingController.text));
+          
+          // print(selection.textBefore(_textEditingController.text));
+          // print(selection.textAfter(_textEditingController.text));
+          final words1 = selection.textBefore(_textEditingController.text).split(" ");
+          final words2 = selection.textAfter(_textEditingController.text).split(" ");
+          
+          // 取words1的最后一个元素
+          final word1 = words1[words1.length - 1];
+          // 取words2的第一个元素
+          final word2 = words2[0];
+          _newVoiceText = word1 + word2;
+          print(_newVoiceText);
+          _speak();
+        }
+      },
     );
   }
 
-  // 字符分割
-  List<String?> _splitWords(String word) {
-    print(word);
-    final pattern = RegExp(r'(\b[a-zA-Z]+\b|[^\s]+)');
+  Future _speak() async {
+    if (_newVoiceText != null) {
+      if (_newVoiceText!.isNotEmpty) {
+        await flutterTts.speak(_newVoiceText!);
+      }
+    }
+  }
 
-    final words = pattern.allMatches(word).map((match) => match.group(0)).toList();
-
-    print(words);
-    return words;
-    // final List<String> words = [];
-    // final List<String> chars = word.split('');
-    // String temp = '';
-    // for (int i = 0; i < chars.length; i++) {
-    //   if (RegExp(r'[a-zA-Z]').hasMatch(chars[i])) {
-    //     temp += chars[i];
-    //   } else {
-    //     if (temp.isNotEmpty) {
-    //       words.add(temp);
-    //       temp = '';
-    //     }
-    //     words.add(chars[i]);
-    //   }
-    // }
-    // return words;
+  Future<void> setTtsLanguage() async {
+    await flutterTts.setLanguage('en-US'); // 设置为英文（美国）
+    // await flutterTts.setLanguage('zh-CN'); // 设置为中文（中国）
+    // 其他语言和区域代码可根据需要进行设置
   }
 }
