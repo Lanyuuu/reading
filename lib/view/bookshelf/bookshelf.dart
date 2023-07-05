@@ -42,11 +42,14 @@ class _BookshelfState extends State<Bookshelf> {
                         fit: BoxFit.contain,
                       ),
                     ),
-                    const Text(
-                      'Title TitleTitleTitle TitleTitleTitle',
-                      textAlign: TextAlign.start,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(0, 4, 0, 0),
+                      child: Text(
+                        'TitleTitleTitleTitleTitleTitleTitle',
+                        textAlign: TextAlign.start,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    )
                   ],
                 ),
               ));
