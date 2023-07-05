@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'components/tabbar.dart';
-import "view/profile/profile.dart";
 import "view/bookshelf/bookshelf.dart";
-import "view/recommend/recommend.dart";
-import "view/statistics/statistics.dart";
+// import "view/profile/profile.dart";
+// import "view/recommend/recommend.dart";
+// import "view/statistics/statistics.dart";
 
-void main() {
-  runApp(const MyApp());
+void main() { 
+  WidgetsFlutterBinding.ensureInitialized(); 
+  runApp(const MyApp()); 
 }
 
 class MyApp extends StatelessWidget {
@@ -43,14 +44,14 @@ class MyStackPageState extends State<MyStackPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: TableBar(callBack),
+      // bottomNavigationBar: TableBar(callBack),
       body: IndexedStack(
         index: _currentIndex,
         children: const [
           Bookshelf(),
-          Recommend(),
-          Statistics(),
-          Profile(),
+          // Recommend(),
+          // Statistics(),
+          // Profile(),
         ],
       ),
     );

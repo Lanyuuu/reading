@@ -1,7 +1,11 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' as parser;
 import 'package:html/dom.dart' as dom;
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:dio/dio.dart';
 
 class Profile extends StatelessWidget {
   const Profile({Key? key}) : super(key: key);
@@ -138,17 +142,19 @@ class _MyWidgetState extends State<MyWidget> {
           print(selection.textInside(_textEditingController.text));
           print(selection.textAfter(_textEditingController.text));
           print(selection.textBefore(_textEditingController.text));
-        }else if (cause == SelectionChangedCause.tap) {
+        } else if (cause == SelectionChangedCause.tap) {
           print(selection);
           print(selection.baseOffset);
           print(selection.extentOffset);
           print(selection.textInside(_textEditingController.text));
-          
+
           // print(selection.textBefore(_textEditingController.text));
           // print(selection.textAfter(_textEditingController.text));
-          final words1 = selection.textBefore(_textEditingController.text).split(" ");
-          final words2 = selection.textAfter(_textEditingController.text).split(" ");
-          
+          final words1 =
+              selection.textBefore(_textEditingController.text).split(" ");
+          final words2 =
+              selection.textAfter(_textEditingController.text).split(" ");
+
           // 取words1的最后一个元素
           final word1 = words1[words1.length - 1];
           // 取words2的第一个元素
@@ -156,6 +162,7 @@ class _MyWidgetState extends State<MyWidget> {
           _newVoiceText = word1 + word2;
           print(_newVoiceText);
           _speak();
+          makeTranslateRequest(_newVoiceText);
         }
       },
     );
@@ -173,5 +180,50 @@ class _MyWidgetState extends State<MyWidget> {
     await flutterTts.setLanguage('en-US'); // 设置为英文（美国）
     // await flutterTts.setLanguage('zh-CN'); // 设置为中文（中国）
     // 其他语言和区域代码可根据需要进行设置
+  }
+
+  void makeTranslateRequest(str) async {
+    var dio = Dio();
+
+    var url = 'https://fanyi-api.baidu.com/api/trans/vip/translate';
+    var appid = '20200213000383360'; // 替换为您的百度翻译 API App ID
+    var secretKey = '9IIh4CY5zryzv1jMRY6s'; // 替换为您的百度翻译 API 密钥
+
+    var queryParams = {
+      'q': str,
+      'from': 'en',
+      'to': 'zh',
+      'appid': appid,
+      'salt': DateTime.now().millisecondsSinceEpoch.toString(),
+      'sign': '', // 将在下面计算并设置
+      'dict': '1',
+    };
+
+    // 计算签名并设置到查询参数中
+    var sign =
+        generateSign(queryParams['q']!, queryParams['salt']!, appid, secretKey);
+    queryParams['sign'] = sign;
+
+    try {
+      var response = await dio.get(url, queryParameters: queryParams);
+
+      if (response.statusCode == 200) {
+        // 请求成功，处理响应数据
+        print(response.data);
+        print(response.data['trans_result'][0]['dst']);
+      } else {
+        // 请求失败
+        print('请求失败：${response.statusCode}');
+      }
+    } catch (e) {
+      // 请求异常
+      print('请求异常：$e');
+    }
+  }
+
+  String generateSign(
+      String query, String salt, String appid, String secretKey) {
+    var sign = appid + query + salt + secretKey;
+    return md5.convert(utf8.encode(sign)).toString();
   }
 }
