@@ -1,15 +1,14 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'childComp/open_file.dart';
 
 class Bookshelf extends StatefulWidget {
   const Bookshelf({Key? key}) : super(key: key);
 
   @override
-  _BookshelfState createState() => _BookshelfState();
+  BookshelfState createState() => BookshelfState();
 }
 
-class _BookshelfState extends State<Bookshelf> {
+class BookshelfState extends State<Bookshelf> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,22 +25,10 @@ class _BookshelfState extends State<Bookshelf> {
                 widthFactor: 0.8,
                 child: Column(
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5), // 阴影颜色
-                            spreadRadius: 2, // 阴影扩散的范围
-                            blurRadius: 5, // 阴影的模糊程度
-                            offset: const Offset(0, 3), // 阴影的偏移量
-                          ),
-                        ],
-                      ),
-                      child: Image.network(
+                    Image.network(
                         'https://picsum.photos/200/300?random=$index',
                         fit: BoxFit.contain,
                       ),
-                    ),
                     const Padding(
                       padding: EdgeInsets.fromLTRB(0, 4, 0, 0),
                       child: Text(
@@ -56,9 +43,11 @@ class _BookshelfState extends State<Bookshelf> {
         }),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => print('add book'),
+        onPressed: () => {
+          pickFile(),
+        },
         tooltip: 'Add Book',
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }

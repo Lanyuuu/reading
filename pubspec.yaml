@@ -53,6 +53,7 @@ dependencies:
   el_tooltip: any
   flutter_tts: any
   translator: any
+  sqflite: any
 
 dev_dependencies:
   flutter_test:
@@ -75,6 +76,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - lib/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
