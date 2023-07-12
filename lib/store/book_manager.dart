@@ -36,7 +36,8 @@ class DatabaseManager {
             name TEXT,
             author TEXT,
             coverUrl TEXT,
-            additionalInfo TEXT
+            additionalInfo TEXT,
+            chapters TEXT
           )
           '''
         );

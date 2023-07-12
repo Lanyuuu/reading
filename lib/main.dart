@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'components/tabbar.dart';
-import "view/bookshelf/bookshelf.dart";
+import '/components/tabbar.dart';
+import "/view/bookshelf/bookshelf.dart";
 // import "view/profile/profile.dart";
 // import "view/recommend/recommend.dart";
 // import "view/statistics/statistics.dart";
+
 
 void main() { 
   WidgetsFlutterBinding.ensureInitialized(); 
