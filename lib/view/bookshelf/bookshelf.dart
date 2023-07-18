@@ -14,8 +14,10 @@ class BookshelfState extends State<Bookshelf> {
   List books = [];
   // 获取数据库的书本
   Future<void> getBooks() async {
-    books = await DatabaseManager.getAllBooks();
-    print(books);
+    List fetchedBooks = await DatabaseManager.getAllBooks();
+    setState(() {
+      books = fetchedBooks;
+    });
   }
   @override
   void initState() {
@@ -78,17 +80,18 @@ class BookshelfState extends State<Bookshelf> {
         }),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => {
-          pickFile().then((value) => {
-                setState(() {
-                  books = value;
-                  print(books);
-                })
-              })
+        onPressed: () async {
+          await addBook();
         },
         tooltip: 'Add Book',
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  Future addBook() async {
+    final filePickerHelper = FilePickerHelper();
+    await filePickerHelper.pickFile();
+    getBooks();
   }
 }
