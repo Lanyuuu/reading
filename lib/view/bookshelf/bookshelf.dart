@@ -79,7 +79,7 @@ class BookshelfState extends State<Bookshelf> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => {
-          FileHandler.addBook().then((value) => {
+          pickFile().then((value) => {
                 setState(() {
                   books = value;
                   print(books);

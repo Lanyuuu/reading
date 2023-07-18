@@ -6,139 +6,79 @@ import 'package:xml/xml.dart';
 import '/store/book_manager.dart';
 import '/model/book_model.dart';
 
-class FileHandler{
-  static XmlDocument? _document;
-  static dynamic _package;
-  static dynamic _directory;
+Future<dynamic> pickFile() async {
+  FilePickerResult? result = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['epub'],
+  );
 
-
-  /// @description: 添加图书
-  static Future<dynamic> addBook() async {
-    print(1111);
-    final file = await processTheFile(await pickFile());
-    final bookFile = await _analysisOpf(await _saveFile(file["archive"], _directory));
-    final bookInfo = _getBookAllInfo(bookFile, file["directory"]);
-    await _writeDatabase(bookInfo);
-    final books = await DatabaseManager.getAllBooks();
-    print(books);
-    return books;
-  }
-
-  /// @description: 选择文件
-  static Future<dynamic> pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['epub'],
-    );
-    if (result != null) {
-      return result.files.single.path;
-    }
-  }
-
-  /// @description: 处理文件
-  static Future<dynamic> processTheFile(filePath) async {
+  if (result != null) {
     try {
-      File file = File(filePath);
+      File file = File(result.files.single.path!);
 
       final bytes = await file.readAsBytes();
-      String localPath = await _localfilePath();
-      _directory = Directory('$localPath/bookshelf');
-      if (!_directory.existsSync()) {
-        _directory.createSync(recursive: true);
+      String path = await _localfilePath();
+      final directory = Directory('$path/bookshelf');
+      if (!directory.existsSync()) {
+        directory.createSync(recursive: true);
       }
 
-      final bookFile = File('${_directory.path}/${file.path.split('/').last}');
+      final bookFile = File('${directory.path}/${file.path.split('/').last}');
       bookFile.writeAsBytesSync(bytes);
+      List<int> abytes = await bookFile.readAsBytes();
       Archive archive = ZipDecoder().decodeBytes(bytes);
-      return {
-        "archive": archive
-      };
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  /// @description: 保存文件
-  static Future<File> _saveFile(Archive archive, Directory directory) async {
-    File? opfFile;
-    try {
+      print(archive);
       for (ArchiveFile file in archive) {
+        final filename = file.name;
+        final data = file.content as List<int>;
+        print('${directory.path}$filename');
         final filePath = '${directory.path}/${file.name}';
         if (file.isFile) {
           final data = file.content as List<int>;
           File(filePath).writeAsBytesSync(data, flush: true);
-          if (filePath.endsWith('.opf')) {
-            opfFile = File(filePath);
-          }
         } else {
           Directory(filePath).createSync(recursive: true);
         }
       }
-      return opfFile!;
-    } catch (e) {
-      throw Exception('Failed to save file: $e');
-    }
-  }
 
-  static Future<dynamic> _analysisOpf(opfFile) async {
-    final contents = opfFile.readAsStringSync();
+      final opfFile = File('${directory.path}/metadata.opf');
+      final contents = opfFile.readAsStringSync();
 
-    // 解析 OPF 文件
-    _document = XmlDocument.parse(contents);
-    _package = _document?.getElement('package');
-    final metadata = _package?.getElement('metadata');
+      // 解析 OPF 文件
+      final document = XmlDocument.parse(contents);
+      final package = document.getElement('package');
 
-    final cover = _document
-        ?.findAllElements('item')
-        .firstWhere((item) => item.getAttribute('media-type') == 'image/jpeg');
-    print(cover);
+      // 提取元数据信息
+      final metadata = package?.getElement('metadata');
+      final title = metadata?.getElement('dc:title')?.text;
+      final author = metadata?.getElement('dc:creator')?.text;
+      final cover = document
+      .findAllElements('item')
+      .firstWhere((item) => item.getAttribute('media-type') == 'image/jpeg');
+      final coverHref = cover.getAttribute('href');
 
-    final manifest = _package?.getElement('manifest');
-    final spine = _package?.getElement('spine');
+      // 提取目录信息
+      final manifest = package?.getElement('manifest');
+      final spine = package?.getElement('spine');
+      final toc =
+          spine?.getElement('itemref[@idref="toc"]')?.getAttribute('idref');
 
-    final items = manifest?.findAllElements('item');
-    final chapters = spine
-        ?.findAllElements('itemref')
-        .map((itemref) => itemref.getAttribute('idref'))
-        .map((idref) =>
-            items?.firstWhere((item) => item.getAttribute('id') == idref))
-        .where((item) =>
-            item?.getAttribute('media-type') == 'application/xhtml+xml' &&
-            item?.getAttribute('href')?.endsWith('.html') == true)
-        .map((item) => {'${_directory.path}/${item?.getAttribute('href')}'})
-        .toList()
-        .join(']');
-    print(chapters);
-  }
+      final items = manifest?.findAllElements('item');
+      final acontents = spine
+          ?.findAllElements('itemref')
+          .map((itemref) => itemref.getAttribute('idref'))
+          .map((idref) =>
+              items?.firstWhere((item) => item.getAttribute('id') == idref))
+          .toList();
 
-  // 获取标题
-  static String _getTitle(metadata) {
-    return metadata?.getElement('dc:title')?.text;
-  }
+      print('Title: $title');
+      print('Author: $author');
+      print('Cover: $coverHref');
+      print('TOC: $toc');
+      print('Contents: $acontents');
 
-  // 获取作者
-  static String _getAuthor(metadata) {
-    return metadata?.getElement('dc:creator')?.text;
-  }
 
-  // 获取封面
-  static String? _getCoverHref() {
-    print(_document);
-    final cover = _document
-        ?.findAllElements('item')
-        .firstWhere((item) => item.getAttribute('media-type') == 'image/jpeg');
-    print(cover);
-    return cover?.getAttribute('href');
-  }
-
-  // 获取章节
-  static String _getChapters(directory) {
-    // 提取目录信息
-    final manifest = _package?.getElement('manifest');
-    final spine = _package?.getElement('spine');
-
-    final items = manifest?.findAllElements('item');
-    final chapters = spine
+      final chapters = spine
         ?.findAllElements('itemref')
         .map((itemref) => itemref.getAttribute('idref'))
         .map((idref) =>
@@ -149,37 +89,39 @@ class FileHandler{
         .map((item) => {'${directory.path}/${item?.getAttribute('href')}'})
         .toList()
         .join(']');
-    return chapters;
-  }
 
-  static dynamic _getBookAllInfo(bookFile, directory) {
-    return {
-      'title': _getTitle(bookFile['metadata']),
-      'author': _getAuthor(bookFile['metadata']),
-      'coverHref': directory.path + '/' + _getCoverHref(),
-      'chapters': _getChapters(directory),
-    };
-  }
+      final book = Book(
+        name: title??'Unknown',
+        author: author??'Unknown',
+        coverUrl: coverHref != null?'${directory.path}/$coverHref':'Unknown',
+        additionalInfo: 'A comprehensive guide to Flutter development.',
+        chapters: chapters??'Unknown',
+      );
 
-  static Future _writeDatabase(bookInfo) async {
-    final book = Book(
-      name: bookInfo.title ?? 'Unknown',
-      author: bookInfo.author ?? 'Unknown',
-      coverUrl: bookInfo.coverHref ?? 'Unknown',
-      additionalInfo: 'A comprehensive guide to Flutter development.',
-      chapters: bookInfo.chapters ?? 'Unknown',
-    );
-    print(book);
-    await DatabaseManager.addBook(book);
+      await DatabaseManager.addBook(book);
+      final books = await DatabaseManager.getAllBooks();
+      print(books);
+      return books;
+    } catch (e) {
+      print(e);
+    }
   }
-
-  /// 获取文档目录
-  static Future<String> _localfilePath() async {
-    Directory tempDir = await getTemporaryDirectory();
-    return tempDir.path;
-  }
-
 }
+
+/// 获取文档目录
+Future _localfilePath() async {
+  Directory tempDir = await getTemporaryDirectory();
+  return tempDir.path;
+}
+
+/// 获取文档
+Future<File> _localfile() async {
+  String path = await _localfilePath();
+  print('$path/settting.txt');
+  return new File('$path/settting.txt');
+}
+
+
 
 
 
