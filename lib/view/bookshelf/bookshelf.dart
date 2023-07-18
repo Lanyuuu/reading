@@ -79,7 +79,7 @@ class BookshelfState extends State<Bookshelf> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => {
-          addBook().then((value) => {
+          FileHandler.addBook().then((value) => {
                 setState(() {
                   books = value;
                   print(books);
@@ -90,9 +90,5 @@ class BookshelfState extends State<Bookshelf> {
         child: const Icon(Icons.add),
       ),
     );
-  }
-
-  Future<dynamic> addBook() async {
-    return await pickFile();
   }
 }

@@ -7,12 +7,17 @@ import '/store/book_manager.dart';
 import '/model/book_model.dart';
 
 class FileHandler{
+  static XmlDocument? _document;
+  static dynamic _package;
+  static dynamic _directory;
+
 
   /// @description: 添加图书
-  Future<dynamic> addBook() async {
+  static Future<dynamic> addBook() async {
+    print(1111);
     final file = await processTheFile(await pickFile());
-    final bookFile = await _analysisOpf(await _saveFile(file.archive, file.directory));
-    final bookInfo = _getBookAllInfo(bookFile, file.directory);
+    final bookFile = await _analysisOpf(await _saveFile(file["archive"], _directory));
+    final bookInfo = _getBookAllInfo(bookFile, file["directory"]);
     await _writeDatabase(bookInfo);
     final books = await DatabaseManager.getAllBooks();
     print(books);
@@ -20,7 +25,7 @@ class FileHandler{
   }
 
   /// @description: 选择文件
-  Future<dynamic> pickFile() async {
+  static Future<dynamic> pickFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['epub'],
@@ -31,23 +36,22 @@ class FileHandler{
   }
 
   /// @description: 处理文件
-  Future<dynamic> processTheFile(filePath) async {
+  static Future<dynamic> processTheFile(filePath) async {
     try {
       File file = File(filePath);
 
       final bytes = await file.readAsBytes();
       String localPath = await _localfilePath();
-      final directory = Directory('$localPath/bookshelf');
-      if (!directory.existsSync()) {
-        directory.createSync(recursive: true);
+      _directory = Directory('$localPath/bookshelf');
+      if (!_directory.existsSync()) {
+        _directory.createSync(recursive: true);
       }
 
-      final bookFile = File('${directory.path}/${file.path.split('/').last}');
+      final bookFile = File('${_directory.path}/${file.path.split('/').last}');
       bookFile.writeAsBytesSync(bytes);
       Archive archive = ZipDecoder().decodeBytes(bytes);
       return {
-        archive: archive,
-        directory: directory,
+        "archive": archive
       };
     } catch (e) {
       print(e);
@@ -55,7 +59,7 @@ class FileHandler{
   }
 
   /// @description: 保存文件
-  Future<File> _saveFile(Archive archive, Directory directory) async {
+  static Future<File> _saveFile(Archive archive, Directory directory) async {
     File? opfFile;
     try {
       for (ArchiveFile file in archive) {
@@ -76,46 +80,65 @@ class FileHandler{
     }
   }
 
-  Future<dynamic> _analysisOpf(opfFile) async {
+  static Future<dynamic> _analysisOpf(opfFile) async {
     final contents = opfFile.readAsStringSync();
 
     // 解析 OPF 文件
-    final document = XmlDocument.parse(contents);
-    final package = document.getElement('package');
-    final metadata = package?.getElement('metadata');
-    return {
-      'document': document,
-      'package': package,
-      'metadata': metadata,
-    };
+    _document = XmlDocument.parse(contents);
+    _package = _document?.getElement('package');
+    final metadata = _package?.getElement('metadata');
+
+    final cover = _document
+        ?.findAllElements('item')
+        .firstWhere((item) => item.getAttribute('media-type') == 'image/jpeg');
+    print(cover);
+
+    final manifest = _package?.getElement('manifest');
+    final spine = _package?.getElement('spine');
+
+    final items = manifest?.findAllElements('item');
+    final chapters = spine
+        ?.findAllElements('itemref')
+        .map((itemref) => itemref.getAttribute('idref'))
+        .map((idref) =>
+            items?.firstWhere((item) => item.getAttribute('id') == idref))
+        .where((item) =>
+            item?.getAttribute('media-type') == 'application/xhtml+xml' &&
+            item?.getAttribute('href')?.endsWith('.html') == true)
+        .map((item) => {'${_directory.path}/${item?.getAttribute('href')}'})
+        .toList()
+        .join(']');
+    print(chapters);
   }
 
   // 获取标题
-  String _getTitle(metadata) {
+  static String _getTitle(metadata) {
     return metadata?.getElement('dc:title')?.text;
   }
 
   // 获取作者
-  String _getAuthor(metadata) {
+  static String _getAuthor(metadata) {
     return metadata?.getElement('dc:creator')?.text;
   }
 
   // 获取封面
-  String _getCoverHref(document) {
-    final cover = document
-        .findAllElements('item')
+  static String? _getCoverHref() {
+    print(_document);
+    final cover = _document
+        ?.findAllElements('item')
         .firstWhere((item) => item.getAttribute('media-type') == 'image/jpeg');
-    return cover.getAttribute('href');
+    print(cover);
+    return cover?.getAttribute('href');
   }
 
   // 获取章节
-  String _getChapters(package, directory) {
+  static String _getChapters(directory) {
     // 提取目录信息
-    final manifest = package?.getElement('manifest');
-    final spine = package?.getElement('spine');
+    final manifest = _package?.getElement('manifest');
+    final spine = _package?.getElement('spine');
 
     final items = manifest?.findAllElements('item');
-    return spine
+    final chapters = spine
         ?.findAllElements('itemref')
         .map((itemref) => itemref.getAttribute('idref'))
         .map((idref) =>
@@ -126,18 +149,19 @@ class FileHandler{
         .map((item) => {'${directory.path}/${item?.getAttribute('href')}'})
         .toList()
         .join(']');
+    return chapters;
   }
 
-  dynamic _getBookAllInfo(bookFile, directory) {
+  static dynamic _getBookAllInfo(bookFile, directory) {
     return {
       'title': _getTitle(bookFile['metadata']),
       'author': _getAuthor(bookFile['metadata']),
-      'coverHref': directory.path + '/' + _getCoverHref(bookFile['document']),
-      'chapters': _getChapters(bookFile['package'], directory),
+      'coverHref': directory.path + '/' + _getCoverHref(),
+      'chapters': _getChapters(directory),
     };
   }
 
-  Future _writeDatabase(bookInfo) async {
+  static Future _writeDatabase(bookInfo) async {
     final book = Book(
       name: bookInfo.title ?? 'Unknown',
       author: bookInfo.author ?? 'Unknown',
@@ -145,11 +169,12 @@ class FileHandler{
       additionalInfo: 'A comprehensive guide to Flutter development.',
       chapters: bookInfo.chapters ?? 'Unknown',
     );
+    print(book);
     await DatabaseManager.addBook(book);
   }
 
   /// 获取文档目录
-  Future<String> _localfilePath() async {
+  static Future<String> _localfilePath() async {
     Directory tempDir = await getTemporaryDirectory();
     return tempDir.path;
   }
