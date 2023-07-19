@@ -68,11 +68,12 @@ class ReadingPageMain extends State<ReadingPage> {
           child: CostomWidget(text: node.text),
         );
       case 'em':
-        return Transform(
-          transform: Matrix4.skewX(-0.2), // 这里的0.2表示横向倾斜弧度，可以根据需要调整倾斜程度
-          child: Text(
-            node.text, // 要倾斜的文本
-            style: const TextStyle(fontSize: 18),
+        return Text(
+          node.text,
+          style: const TextStyle(
+            fontSize: 18,
+            fontStyle: FontStyle.italic,
+            color: Colors.grey,
           ),
         );
       default:
