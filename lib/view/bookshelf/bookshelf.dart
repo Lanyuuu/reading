@@ -19,6 +19,7 @@ class BookshelfState extends State<Bookshelf> {
       books = fetchedBooks;
     });
   }
+
   @override
   void initState() {
     super.initState();
@@ -58,12 +59,22 @@ class BookshelfState extends State<Bookshelf> {
                 widthFactor: 0.8,
                 child: Column(
                   children: [
-                    Image(
-                      image: FileImage(File(books[index].coverUrl)),
-                      fit: BoxFit.cover,
+                    AspectRatio(
+                      aspectRatio: 0.7 / 1, // 原始内容的宽高比
+                      child: Image(
+                        image: FileImage(File(books[index].coverUrl)),
+                        fit: BoxFit.fitHeight,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'assets/images/no-cover.jpg',
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      ),
                     ),
+
                     // Image.network(
-                    //     'https://picsum.photos/200/300?random=$index',
+                    //     'https://picsum.photos/472/700?random=$index',
                     //     fit: BoxFit.contain,
                     //   ),
                     Padding(
