@@ -94,8 +94,7 @@ class FilePickerHelper {
   }
 
   /// 解析元数据或章节
-  Future<dynamic> _parseMetadataOrChapters(
-      Directory directory, bool isMetadata) async {
+  Future<dynamic> _parseMetadataOrChapters(Directory directory, bool isMetadata) async {
     print(isMetadata ? "解析元数据" : "解析章节");
     final opfFile = _findOpfFile(directory);
     String directoryPath = opfFile.path.substring(0, opfFile.path.lastIndexOf('/'));
@@ -103,11 +102,9 @@ class FilePickerHelper {
     final document = XmlDocument.parse(contents);
     final package = document.getElement('package');
     final metadata = package?.getElement('metadata');
-    final title = metadata?.getElement('dc:title')?.text;
-    print(title);
-    final author = metadata?.getElement('dc:creator')?.text;
-    print(author);
     if (isMetadata) {
+      final title = metadata?.getElement('dc:title')?.text;
+      final author = metadata?.getElement('dc:creator')?.text;
       return {
         'title': title,
         'author': author,
@@ -122,11 +119,12 @@ class FilePickerHelper {
           .map((idref) =>
               items?.firstWhere((item) => item.getAttribute('id') == idref))
           .where((item) =>
-              item?.getAttribute('media-type') == 'application/xhtml+xml' &&
-              item?.getAttribute('href')?.endsWith('.html') == true)
+              item?.getAttribute('media-type') == 'application/xhtml+xml')
           .map((item) => '$directoryPath/${item?.getAttribute('href')}')
           .toList()
           .join(']');
+      
+      print("章节: $acontents");
       return acontents;
     }
   }

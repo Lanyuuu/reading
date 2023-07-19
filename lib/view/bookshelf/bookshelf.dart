@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'childComp/open_file.dart';
 import '/store/book_manager.dart';
 import 'dart:io';
-import "/view/profile/profile.dart";
+import "/view/reading/reading_page.dart";
 
 class Bookshelf extends StatefulWidget {
   const Bookshelf({Key? key}) : super(key: key);
@@ -39,19 +39,10 @@ class BookshelfState extends State<Bookshelf> {
         children: List.generate(books.length, (index) {
           return GestureDetector(
               onTap: () async {
-                print(books[index]);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const Profile()),
+                  MaterialPageRoute(builder: (context) => ReadingPage(chapter: books[index].chapters ?? "")),
                 );
-                // await Navigator.push(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (context) => OpenFile(
-                //       filePath: books[index].filePath,
-                //     ),
-                //   ),
-                // );
               },
               onLongPress: () async {
                 await DatabaseManager.deleteBook(books[index].id!);
