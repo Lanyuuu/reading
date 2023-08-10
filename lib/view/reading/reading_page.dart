@@ -19,20 +19,51 @@ class ReadingPage extends StatefulWidget {
 
 class ReadingPageMain extends State<ReadingPage> {
   String htmlBody = "";
+  var chapterIndex = 1;
+  List<Widget> childElements = [];
+  final ScrollController _scrollController = ScrollController();
+
+  bool _isLoadingNextChapter = false;
 
   @override
   void initState() {
     super.initState();
     parseHtml();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.offset >=
+            _scrollController.position.maxScrollExtent &&
+        !_scrollController.position.outOfRange) {
+      // 滚动到底部，加载下一章
+      if (!_isLoadingNextChapter) {
+        setState(() {
+          _isLoadingNextChapter = true;
+        });
+        loadNextChapter().then((_) {
+          setState(() {
+            _isLoadingNextChapter = false;
+          });
+        });
+      }
+    }
   }
 
   void parseHtml() {
     try {
       final List<String> chapters = widget.chapter.split("]");
-      print("第一章: ${chapters[0]}");
-      final file = File(chapters[1]);
+      print("第一章: ${chapters[chapterIndex]}");
+      final file = File(chapters[chapterIndex]);
       setState(() {
         htmlBody = file.readAsStringSync();
+        chapterIndex++;
       });
     } catch (e) {
       htmlBody = "<p>获取不到章节</p>";
@@ -40,6 +71,23 @@ class ReadingPageMain extends State<ReadingPage> {
     }
   }
 
+  Future<void> loadNextChapter() async {
+    String nextHtml = "";
+    try {
+      final List<String> chapters = widget.chapter.split("]");
+      final file = File(chapters[chapterIndex]);
+      nextHtml = file.readAsStringSync();
+      setState(() {
+        chapterIndex++;
+      });
+    } catch (e) {
+      nextHtml = "<p>获取不到章节</p>";
+      print(e);
+    }
+
+    final dom.Document document = parser.parse(nextHtml);
+    generateChildren(document);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +99,7 @@ class ReadingPageMain extends State<ReadingPage> {
       body: Padding(
         padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
         child: SingleChildScrollView(
+          controller: _scrollController,
           child: Column(
             children: generateChildren(document),
           ),
@@ -58,13 +107,18 @@ class ReadingPageMain extends State<ReadingPage> {
       ),
     );
   }
-  
+
   Widget getAllChildElements(dom.Element node) {
     print(node.localName);
     switch (node.localName) {
       case 'p':
         return Container(
-          margin: const EdgeInsets.only(bottom: 10),
+          margin: const EdgeInsets.only(bottom: 1),
+          child: CostomWidget(text: node.text),
+        );
+      case 'div':
+        return Container(
+          margin: const EdgeInsets.only(bottom: 1),
           child: CostomWidget(text: node.text),
         );
       case 'em':
@@ -80,29 +134,31 @@ class ReadingPageMain extends State<ReadingPage> {
         return Text(
           node.text,
           style: const TextStyle(
-            fontSize: 18,
+            fontSize: 10,
           ),
         );
     }
   }
 
   List<Widget> generateChildren(dom.Document document) {
-    
-    List<Widget> childElements = [];
     final dom.Element body = document.body!;
 
     void traverse(dom.Element currentElement) {
       for (var node in currentElement.nodes) {
+        // print(node.children.length);
         if (node is dom.Element) {
-          if(node.text != "") {
+          // print("type: ${node.innerHtml}");
+          if (node.text != "") {
             childElements.add(getAllChildElements(node));
           }
-          
-          traverse(node); // 递归调用遍历当前节点的子节点
+          // print(node.hasChildNodes());
+
+          // traverse(node); // 递归调用遍历当前节点的子节点
         }
-        childElements.add(SizedBox.shrink());
+        childElements.add(const SizedBox.shrink());
       }
     }
+
     traverse(body);
     return childElements;
   }
