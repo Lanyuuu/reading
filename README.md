@@ -1,6 +1,12 @@
 # reading
 
-A new Flutter project.
+#### 阅读本地epub书籍.
+
+框架使用flutter
+
+#### 和其他阅读app不一样的地方:
+1. 更适用于英文书籍, 点击单词即可获取发音和翻译.
+
 
 ## Getting Started
 
